@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getTemplatesByCategory, templateLibrary } from "@/lib/template-library"
 
 interface CategoryModalProps {
   open: boolean
@@ -269,6 +270,13 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
     preview = preview.replace(/{field.project_name}/g, "Summer Vacation")
     preview = preview.replace(/{field.budget}/g, "$50,000")
     preview = preview.replace(/{field.location}/g, "Building A")
+    preview = preview.replace(/{field.employee_name}/g, "Alice Smith")
+    preview = preview.replace(/{field.order_id}/g, "1234")
+    preview = preview.replace(/{field.issue_type}/g, "Plumbing")
+    preview = preview.replace(/{field.vendor}/g, "Amazon")
+    preview = preview.replace(/{field.amount}/g, "$450.00")
+    preview = preview.replace(/{field.asset_name}/g, "Apple Stock")
+    preview = preview.replace(/{field.strategy}/g, "Growth")
     // Потім простіші
     preview = preview.replace(/{creator}/g, "John Doe")
     preview = preview.replace(/{organization}/g, "Cresset")
@@ -283,13 +291,26 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
     return preview
   }
 
-  // Генерація нових опцій (перемішуємо масив)
+  // Генерація нових опцій
   const generateNewOptions = () => {
     setIsGeneratingSuggestions(true)
     // Симуляція генерації (1-2 секунди)
     setTimeout(() => {
-      const shuffled = [...aiSuggestions].sort(() => Math.random() - 0.5)
-      setDisplayedSuggestions(shuffled.slice(0, 3))
+      // Спочатку шукаємо в бібліотеці
+      const libraryMatches = getTemplatesByCategory(categoryName)
+      let newSuggestions = [...libraryMatches]
+
+      // Якщо в бібліотеці мало варіантів, додаємо загальні AI suggestions
+      if (newSuggestions.length < 3) {
+        const remaining = 3 - newSuggestions.length
+        const shuffledAI = [...aiSuggestions]
+          .filter(ai => !newSuggestions.some(n => n.template === ai.template))
+          .sort(() => Math.random() - 0.5)
+        
+        newSuggestions = [...newSuggestions, ...shuffledAI.slice(0, remaining)]
+      }
+
+      setDisplayedSuggestions(newSuggestions.slice(0, 3))
       // Скидаємо вибір
       setSelectedSuggestionIndex(null)
       setIsGeneratingSuggestions(false)
@@ -308,11 +329,25 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
       // Показуємо лоадер при включенні
       setIsGeneratingSuggestions(true)
       setTimeout(() => {
+        // Шукаємо в бібліотеці або беремо дефолтні
+        const libraryMatches = getTemplatesByCategory(categoryName)
+        let initialSuggestions = [...libraryMatches]
+
+        if (initialSuggestions.length < 3) {
+          const remaining = 3 - initialSuggestions.length
+          const shuffledAI = [...aiSuggestions]
+            .filter(ai => !initialSuggestions.some(n => n.template === ai.template))
+            .sort(() => Math.random() - 0.5)
+          initialSuggestions = [...initialSuggestions, ...shuffledAI.slice(0, remaining)]
+        }
+
+        setDisplayedSuggestions(initialSuggestions.slice(0, 3))
         setIsGeneratingSuggestions(false)
+        
         // Smart defaults: автоматично вибираємо найкращу опцію (першу)
-        if (displayedSuggestions.length > 0) {
+        if (initialSuggestions.length > 0) {
           setSelectedSuggestionIndex(0)
-          const selectedTemplate = displayedSuggestions[0].template
+          const selectedTemplate = initialSuggestions[0].template
           setTemplateValue(selectedTemplate)
           const errors = validateTemplate(selectedTemplate)
           setTemplateErrors(errors)

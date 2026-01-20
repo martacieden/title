@@ -195,6 +195,13 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
   }, [templateEnabled, showManualSetup, isGeneratingSuggestions, displayedSuggestions, selectedSuggestionIndex])
 
   useEffect(() => {
+    // Оновлюємо пропозиції, якщо змінилася назва категорії і ми на кроці налаштування заголовка
+    if (currentStep === 1 && templateEnabled && !showManualSetup && displayedSuggestions.length === 0) {
+      refreshSuggestions(categoryName, true)
+    }
+  }, [currentStep, categoryName, templateEnabled, showManualSetup, displayedSuggestions])
+
+  useEffect(() => {
     // Close dropdowns when clicking outside
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -291,16 +298,14 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
     return preview
   }
 
-  // Генерація нових опцій
-  const generateNewOptions = () => {
+  // Функція для оновлення пропозицій на основі назви категорії
+  const refreshSuggestions = (name: string, selectFirst = false) => {
     setIsGeneratingSuggestions(true)
-    // Симуляція генерації (1-2 секунди)
+    
     setTimeout(() => {
-      // Спочатку шукаємо в бібліотеці
-      const libraryMatches = getTemplatesByCategory(categoryName)
+      const libraryMatches = getTemplatesByCategory(name)
       let newSuggestions = [...libraryMatches]
 
-      // Якщо в бібліотеці мало варіантів, додаємо загальні AI suggestions
       if (newSuggestions.length < 3) {
         const remaining = 3 - newSuggestions.length
         const shuffledAI = [...aiSuggestions]
@@ -310,11 +315,24 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
         newSuggestions = [...newSuggestions, ...shuffledAI.slice(0, remaining)]
       }
 
-      setDisplayedSuggestions(newSuggestions.slice(0, 3))
-      // Скидаємо вибір
-      setSelectedSuggestionIndex(null)
+      const finalOnes = newSuggestions.slice(0, 3)
+      setDisplayedSuggestions(finalOnes)
       setIsGeneratingSuggestions(false)
+      
+      if (selectFirst && finalOnes.length > 0) {
+        setSelectedSuggestionIndex(0)
+        const selectedTemplate = finalOnes[0].template
+        setTemplateValue(selectedTemplate)
+        const errors = validateTemplate(selectedTemplate)
+        setTemplateErrors(errors)
+      }
     }, 1500)
+  }
+
+  // Генерація нових опцій
+  const generateNewOptions = () => {
+    setSelectedSuggestionIndex(null)
+    refreshSuggestions(categoryName)
   }
 
   // Обробка включення тоглу
@@ -323,38 +341,10 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
     setTemplateEnabled(newValue)
     
     if (newValue) {
-      // Спочатку скидаємо вибір
       setSelectedSuggestionIndex(null)
       setTemplateValue("")
-      // Показуємо лоадер при включенні
-      setIsGeneratingSuggestions(true)
-      setTimeout(() => {
-        // Шукаємо в бібліотеці або беремо дефолтні
-        const libraryMatches = getTemplatesByCategory(categoryName)
-        let initialSuggestions = [...libraryMatches]
-
-        if (initialSuggestions.length < 3) {
-          const remaining = 3 - initialSuggestions.length
-          const shuffledAI = [...aiSuggestions]
-            .filter(ai => !initialSuggestions.some(n => n.template === ai.template))
-            .sort(() => Math.random() - 0.5)
-          initialSuggestions = [...initialSuggestions, ...shuffledAI.slice(0, remaining)]
-        }
-
-        setDisplayedSuggestions(initialSuggestions.slice(0, 3))
-        setIsGeneratingSuggestions(false)
-        
-        // Smart defaults: автоматично вибираємо найкращу опцію (першу)
-        if (initialSuggestions.length > 0) {
-          setSelectedSuggestionIndex(0)
-          const selectedTemplate = initialSuggestions[0].template
-          setTemplateValue(selectedTemplate)
-          const errors = validateTemplate(selectedTemplate)
-          setTemplateErrors(errors)
-        }
-      }, 1500)
+      refreshSuggestions(categoryName, true)
     } else {
-      // При вимкненні скидаємо вибір
       setSelectedSuggestionIndex(null)
       setTemplateValue("")
       setTemplateErrors([])
@@ -731,6 +721,12 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
                                       <span className="font-medium text-[#111827]">
                                         {generatePreviewText(suggestion.template)}
                                       </span>
+                                      {"id" in suggestion && (
+                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#F0FDF4] border border-[#DCFCE7]">
+                                          <Sparkles className="w-2.5 h-2.5 text-[#16A34A]" />
+                                          <span className="text-[10px] font-bold text-[#16A34A] uppercase tracking-tight">Library Match</span>
+                                        </div>
+                                      )}
                                     </div>
                                     {selectedSuggestionIndex === index && (
                                       <Button 

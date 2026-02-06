@@ -22,18 +22,16 @@ interface CategoryModalProps {
 
 const steps = [
   { number: 1, label: "Category details", key: "details" },
-  { number: 2, label: "Title settings", key: "title" },
-  { number: 3, label: "Select category capsules", key: "capsules" },
-  { number: 4, label: "Set up custom fields", key: "custom" },
-  { number: 5, label: "Select a workflow", key: "workflow" },
+  { number: 2, label: "Select category capsules", key: "capsules" },
+  { number: 3, label: "Set up custom fields", key: "custom" },
+  { number: 4, label: "Select a workflow", key: "workflow" },
 ]
 
 const stepIndexMap: Record<string, number> = {
   details: 0,
-  title: 1,
-  capsules: 2,
-  custom: 3,
-  workflow: 4,
+  capsules: 1,
+  custom: 2,
+  workflow: 3,
 }
 
 const variables = {
@@ -666,214 +664,6 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
               )}
 
               {currentStep === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-[#7C3AED]" />
-                        <h3 className="text-base font-semibold text-[#111827]">Smart title generation</h3>
-                      </div>
-                      <Switch 
-                        checked={templateEnabled}
-                        onCheckedChange={handleToggleEnabled}
-                      />
-                    </div>
-                    <p className="text-sm text-[#6B7280]">
-                      Automate your titles to ensure consistency across all entries. AI will use your custom fields to generate clear, professional names automatically.
-                    </p>
-                  </div>
-
-                  {templateEnabled && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                      {isGeneratingSuggestions ? (
-                        <div className="space-y-3">
-                          <Skeleton className="h-[72px] w-full rounded-xl" />
-                          <Skeleton className="h-[72px] w-full rounded-xl" />
-                          <Skeleton className="h-[72px] w-full rounded-xl" />
-                        </div>
-                      ) : !showManualSetup ? (
-                        <div className="space-y-4">
-                          <RadioGroup 
-                            value={selectedSuggestionIndex?.toString()} 
-                            onValueChange={(val) => handleSelectSuggestion(parseInt(val))}
-                            className="space-y-3"
-                          >
-                            {displayedSuggestions.map((suggestion, index) => (
-                              <div key={index} className="relative group">
-                                <label
-                                  htmlFor={`suggestion-${index}`}
-                                  className={cn(
-                                    "flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-[#2563EB]/50",
-                                    selectedSuggestionIndex === index 
-                                      ? "border-[#2563EB] bg-[#EFF6FF]" 
-                                      : "border-[#E5E7EB] bg-white"
-                                  )}
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-3">
-                                      <RadioGroupItem value={index.toString()} id={`suggestion-${index}`} className="sr-only" />
-                                      <div className={cn(
-                                        "w-4 h-4 rounded-full border flex items-center justify-center transition-colors",
-                                        selectedSuggestionIndex === index ? "border-[#2563EB] bg-[#2563EB]" : "border-[#D1D5DB] bg-white"
-                                      )}>
-                                        {selectedSuggestionIndex === index && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                      </div>
-                                      <span className="font-medium text-[#111827]">
-                                        {generatePreviewText(suggestion.template)}
-                                      </span>
-                                      {"id" in suggestion && (
-                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#F0FDF4] border border-[#DCFCE7]">
-                                          <Sparkles className="w-2.5 h-2.5 text-[#16A34A]" />
-                                          <span className="text-[10px] font-bold text-[#16A34A] uppercase tracking-tight">Library Match</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    {selectedSuggestionIndex === index && (
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-7 px-2 text-[#2563EB] hover:text-[#1D4ED8] hover:bg-[#DBEAFE] text-xs font-medium gap-1"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          handleEditSuggestion();
-                                        }}
-                                      >
-                                        <Pencil className="w-3 h-3" />
-                                        Edit
-                                      </Button>
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-[#6B7280] ml-7">
-                                    {suggestion.description}
-                                  </p>
-                                </label>
-                              </div>
-                            ))}
-                          </RadioGroup>
-
-                          <div className="flex items-center justify-between pt-2">
-                            <button
-                              onClick={generateNewOptions}
-                              disabled={isGeneratingSuggestions}
-                              className="flex items-center gap-2 text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
-                            >
-                              <RefreshCw className={cn("w-4 h-4", isGeneratingSuggestions && "animate-spin")} />
-                              Generate new options
-                            </button>
-                            <button
-                              onClick={handleCustomizeManually}
-                              className="text-sm font-medium text-[#6B7280] hover:text-[#374151] transition-colors"
-                            >
-                              Customize manually
-                            </button>
-                          </div>
-
-                          {/* Metadata view for selected suggestion */}
-                          {selectedSuggestionIndex !== null && (
-                            <div className="mt-4 p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg animate-in fade-in duration-500">
-                              <div className="flex items-start gap-2">
-                                <MessageSquare className="w-4 h-4 text-[#6B7280] mt-0.5" />
-                                <div>
-                                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">How it's built</p>
-                                  <code className="text-xs text-[#374151] bg-[#F3F4F6] px-1.5 py-0.5 rounded border border-[#E5E7EB]">
-                                    {displayedSuggestions[selectedSuggestionIndex].template}
-                                  </code>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-4 animate-in fade-in duration-300">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-[#111827]">Manual setup</h4>
-                            <button 
-                              onClick={() => setShowManualSetup(false)}
-                              className="text-xs text-[#2563EB] hover:underline"
-                            >
-                              Back to suggestions
-                            </button>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div className="relative" ref={dropdownRef}>
-                              <div className="flex items-center justify-between mb-1.5">
-                                <label className="text-xs font-medium text-[#374151]">Template</label>
-                                <button
-                                  onClick={() => setShowVariableDropdown(!showVariableDropdown)}
-                                  className="flex items-center gap-1 text-xs text-[#2563EB] hover:text-[#1D4ED8] font-medium"
-                                >
-                                  <Sparkles className="w-3 h-3" />
-                                  Insert variable
-                                </button>
-                              </div>
-                              
-                              <div className="relative">
-                                <input
-                                  ref={templateInputRef}
-                                  type="text"
-                                  value={templateValue}
-                                  onChange={handleTemplateInputChange}
-                                  onSelect={(e) => setCursorPosition(e.currentTarget.selectionStart || 0)}
-                                  placeholder="e.g. {creator} - {field.project_name}"
-                                  className={cn(
-                                    "w-full bg-white px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all",
-                                    templateErrors.length > 0 ? "border-[#EF4444]" : "border-[#D1D5DB]"
-                                  )}
-                                />
-                                
-                                {showVariableDropdown && (
-                                  <div className="absolute left-0 top-full mt-1 w-full bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 max-h-[280px] overflow-y-auto">
-                                    {Object.entries(variables).map(([group, vars]) => (
-                                      <div key={group}>
-                                        <div className="px-3 py-2 bg-[#F9FAFB] text-[10px] font-bold text-[#6B7280] uppercase tracking-wider border-y border-[#E5E7EB] first:border-t-0">
-                                          {group}
-                                        </div>
-                                        <div className="py-1">
-                                          {vars.map((v) => (
-                                            <button
-                                              key={v.name}
-                                              onClick={() => insertVariable(v.name)}
-                                              className="w-full px-3 py-2 text-left hover:bg-[#F3F4F6] flex flex-col gap-0.5 transition-colors"
-                                            >
-                                              <span className="text-sm font-medium text-[#111827]">{v.name}</span>
-                                              <span className="text-[11px] text-[#6B7280]">Example: {v.example}</span>
-                                            </button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-
-                              {templateErrors.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {templateErrors.map((error, idx) => (
-                                    <p key={idx} className="text-xs text-[#EF4444] flex items-center gap-1.5">
-                                      <span className="w-1 h-1 rounded-full bg-[#EF4444]" />
-                                      {error}
-                                    </p>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl shadow-sm">
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-2">Live Preview</label>
-                              <div className="text-sm font-medium text-[#1E293B]">
-                                {previewText || <span className="text-[#94A3B8] italic">Start typing to see preview...</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {currentStep === 2 && (
                 <div>
                   <h3 className="text-base font-semibold text-[#111827] mb-1">Select category capsules</h3>
                   <p className="text-sm text-[#6B7280] mb-6">Choose the information users must provide when creating new items in this category</p>
@@ -881,7 +671,7 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
                 </div>
               )}
 
-              {currentStep === 3 && (
+              {currentStep === 2 && (
                 <div>
                   <h3 className="text-base font-semibold text-[#111827] mb-1">Set up custom fields</h3>
                   <p className="text-sm text-[#6B7280] mb-6">Add custom fields to capture more context for items in this category</p>
@@ -889,7 +679,7 @@ export function CategoryModal({ open, onOpenChange }: CategoryModalProps) {
                 </div>
               )}
 
-              {currentStep === 4 && (
+              {currentStep === 3 && (
                 <div>
                   <h3 className="text-base font-semibold text-[#111827] mb-1">Select a workflow</h3>
                   <p className="text-sm text-[#6B7280] mb-6">Configure the approval workflow for items in this category</p>
